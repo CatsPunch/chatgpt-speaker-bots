@@ -16,20 +16,10 @@ from sentence_transformers import SentenceTransformer
 import user_info 
 import json
 import spacy
-from fuzzywuzzy import fuzz 
-from user_info import UserInfo
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-from functools import lru_cache
 
 # Load the Spacy model
-nlp = spacy.load('en_core_web_sm')
+nlp = spacy.load('en_core_web_lg')
 
-# Load the user's information
-user_info = UserInfo.load_from_file('user_info.json')
-
-# Define the interest categories as a global variable
 interest_categories = {
     "Automotive": ["Automotive news and general info", "Car culture", "Convertibles", "Hybrid and electric vehicles", "Luxury", "Minivans", "Motorcycles", "Off-road vehicles", "Performance vehicles", "Sedans", "SUV's", "Trucks", "Vintage cars"],
     "Beauty": ["Body art", "Face care", "General info", "Hair care", "Make-up and cosmetics", "Perfumes and fragrances", "Shaving and grooming", "Skin care", "Spa and medical spa", "Tanning and sun care"],
@@ -56,74 +46,41 @@ interest_categories = {
     "Style and Fashion": ["Baby apparel", "Dresses and skirts", "Fashion", "Jewelry", "Kids' apparel", "Men's accessories", "Men's bags", "Men's beachwear", "Men's formal wear", "Men's jeans", "Men's outerwear", "Men's pants", "Men's shoes", "Men's tops", "Sunglasses", "Watches", "Woman's tops", "Women's accessories", "Women's bags", "Women's beachwear", "Women's intimates and hosiery", "Women's jeans", "Women's outerwear", "Women's pants", "Women's shoes", "Women's tops"],
     "Technology and Computing": ["Animation", "Antivirus", "Cameras and camcorders", "Cell phones", "Computer certification", "Computer networking", "Computer programming", "Computer reviews", "Data centers", "Databases", "Enterprise software", "Graphic software", "Home entertainment", "Linux", "MacOS", "Mobile", "Network security", "Open source", "PC support", "SEO", "Startups", "Tablets", "Tech news", "Video conferencing", "Web design", "Windows"],
     "Travel": ["Adventure travel", "Africa", "Air travel", "Asia", "Australia and New Zealand", "Bed and breakfasts", "Business travel", "Camping", "Canada", "Caribbean", "Cruises", "Eastern Europe", "Europe", "France", "Greece", "Hawaii", "Honeymoons and getaways", "Hotels", "Italy", "Japan", "Las Vegas", "Luxury travel", "Mexico and Central America", "National parks", "South America", "Theme parks", "Travel news and general info", "Traveling with kids", "United Kingdom"]
-    }
+}
 
 def detect_new_info(text):
-    # Define the system message
-    system_message = {
-        "role": "system",
-        "content": "I possess unparalleled expertise in comprehending and organizing all aspects of the user's life, including interests, education, profession, relationships, faith, social connections, and familial ties."
-    }
-    # Define the user message
-    user_message = {
-        "role": "user",
-        "content": text
-    }
-    # Make the API call
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[system_message, user_message]
-    )
-    # Extract the assistant's message from the response
-    assistant_message = response["choices"][0]["message"]["content"]
-    # Use the assistant's message to update the user's information
-    new_info = parse_assistant_message(assistant_message)
-    # Define the keys for single item and list item
-    single_item_keys = ["name", "age", "gender", "location", "occupation"]
-    list_item_keys = list(interest_categories.keys())
-    # Write the new information to the user_info.json file
-    write_to_json_file(new_info, single_item_keys, list_item_keys)
-
-def update_user_info(assistant_message):
-    # Parse the assistant's message to extract the new information
-    new_info = parse_assistant_message(assistant_message)
-
-    # Open the user_info.json file
-    with open('user_info.json', 'r+') as file:
-        # Load the existing data
-        data = json.load(file)
-
-        # Update the data with the new information
-        for key, value in new_info.items():
-            if key in data:
-                data[key].append(value)
-            else:
-                data[key] = [value]
-
-        # Write the updated data back to the file
-        file.seek(0)
-        json.dump(data, file, indent=4)
-
-def parse_assistant_message(assistant_message):
-    # Initialize an empty dictionary to hold the new information
     new_info = {}
-    # Create a Doc object for the assistant's message
-    doc = nlp(assistant_message)
-    # Iterate over the entities in the Doc
+    # Define the types of information that the chatbot can recognize
+    single_item_keys = ["name", "age", "gender", "location"]
+    list_item_keys = ["favorite subject", "learning style", "interests", "my favorite", "i like", "likes", "i enjoy", "my favorite", "i want you to know", "i want you to remember", 'remember this', 'dont forget this', 'dont forget', 'remember this']
+    info_types = single_item_keys + list_item_keys
+    for info_type in info_types:
+        # Use regular expressions to find information in the user's input
+        match = re.search(f"{info_type} is ([^.!?]*)", text, re.IGNORECASE)
+        if match:
+            new_info[info_type] = match.group(1).strip()
+        else:
+            match = re.search(f"I am a ([^.!?]*)", text, re.IGNORECASE)
+            if match:
+                new_info[info_type] = match.group(1).strip()
+    # Use Spacy for Named Entity Recognition
+    doc = nlp(text)
     for ent in doc.ents:
-        # Iterate over the interest categories
-        for category, sub_categories in interest_categories.items():
-            # Iterate over the sub-categories
-            for sub_category in sub_categories:
-                # Tokenize the sub-category
-                sub_category_doc = nlp(sub_category)
-                # Check if any of the tokens in the entity's text match any of the tokens in the sub-category
-                if any(token.text.lower() in [token.text.lower() for token in sub_category_doc] for token in ent):
-                    # If there's a match, add the sub-category to the new information
+        if ent.label_ in ["ORG", "GPE", "NORP", "FAC", "LOC", "PRODUCT", "EVENT", "WORK_OF_ART", "LAW", "LANGUAGE", "DATE", "TIME", "PERCENT", "MONEY", "QUANTITY", "ORDINAL", "CARDINAL"]:
+            if "interests" not in new_info:
+                new_info["interests"] = []
+            new_info["interests"].append(ent.text)
+    # Check for interest categories
+    for category, sub_categories in interest_categories.items():
+        for sub_category in sub_categories:
+            sub_category_doc = nlp(sub_category.lower())
+            for word in doc:
+                if word.similarity(sub_category_doc) > 0.8:  # Adjust the threshold as needed
                     if category not in new_info:
                         new_info[category] = []
-                    new_info[category].append(sub_category)
-    return new_info
+                    if sub_category not in new_info[category]:  # Check if the sub-category is already in the list
+                        new_info[category].append(sub_category)
+    write_to_json_file(new_info, single_item_keys, list_item_keys)
 
 def write_to_json_file(data, single_item_keys, list_item_keys, filename='user_info.json'):
     if os.path.isfile(filename):
@@ -145,16 +102,13 @@ def write_to_json_file(data, single_item_keys, list_item_keys, filename='user_in
                 if not isinstance(existing_data[key], list):
                     # If the existing value is not a list, convert it to a list
                     existing_data[key] = [existing_data[key]]
-                # Remove duplicates from value list
-                value = list(set(value))
-                for val in value:
-                    if val not in existing_data[key]:  # Check if the value is already in the list
-                        existing_data[key].append(val)
+                if value not in existing_data[key]:  # Check if the value is already in the list
+                    existing_data[key].append(value)
         else:
             # If the key is not in the existing data, add the new key and value
             if key in list_item_keys:
                 # If the key is a list item key, initialize it as a list
-                existing_data[key] = value if isinstance(value, list) else [value]
+                existing_data[key] = [value]
             else:
                 existing_data[key] = value
     # Write the updated data back to the file
@@ -196,15 +150,14 @@ agents = {os.path.basename(f)[:-3]: import_module(f"models.{os.path.basename(f)[
 # Define the keywords for each agent
 agent_keywords = {
     "mai_agent": ["default", "mai", "maimai", "original"],
-    "teacher_agent": ["teacher", "sensei", "professor", "wise one", "sage"],
-    "language_agent": ["language agent", "foreign language agent", "foreign language tutor", "language tutor", "translation tutor", "language translation tutor"],
+    "teacher_agent": ["learn", "teach", "analyze", "practice", "teacher", "sensei", "professor", "wise one", "sage"],
     "therapist_agent": ["therapist", "I'm sad", "I'm depressed", "I'm unhappy", "suicide", "kill myself", "no point in living", "death", "died"],
     "fitness_agent": ["fitness", "workout", "exercise", "I need to lose weight", "want to lose weight", "lose weight", "slim down", "bulk", "shred"],
     "health_agent": ["health", "wellness", "nutrition", "diet", "wellbeing", "lifestyle", "self-care", "mindfulness", "meditation", "sleep", "stress management", "physical activity", "healthy eating", "weight management", "hydration", "vitamins", "immunity", "relaxation", "balanced diet", "preventive care", "disease prevention", "holistic health", "doctor", "medical", "I need a physical"],
     "legal_agent": ["legal", "lawyer", "personal injury", "divorce", "employment law", "criminal defense", "estate planning", "immigration", "contracts", "intellectual property", "business law", "family law", "bankruptcy", "tax law", "civil litigation", "medical malpractice", "workers' compensation", "landlord-tenant", "social security disability", "insurance claims", "consumer rights"],
     "speaker_agent": ["translate", "auto translate", "let me speak in {language}", "translate this for me", "let me speak in this person's language"],
-    "friend_agent": ["hi friend", "be my friend", "act like my friend", "play with me", "let's play", "let's have fun", "hang with me", "hangout with me", "let's play"],
-    "dating_agent": ["relationship", "dating coach", "I'm going on a date", "going on a date", "relationship problems", "problems in my relationship", "relationship help", "dating advice", "how to kiss", "girl problems", "boy problems", "my fetish", "my kinks"],
+    "friend_agent": ["friend", "hi friend", "be my friend", "act like my friend", "play with me", "let's play", "let's have fun", "hang with me", "hangout with me", "let's play"],
+    "dating_agent": ["dating", "relationship", "dating coach", "I'm going on a date", "going on a date", "relationship problems", "problems in my relationship", "relationship help", "dating advice", "how to kiss", "girl problems", "boy problems", "my fetish", "my kinks"],
     "test_agent": ["testing", "test", "practice"]
 }
 def speak(text):
@@ -244,133 +197,39 @@ def devectorize_conversation(vector):
     # You might need to store the original text along with the vector in your database
     pass
 
-# Initialize the tokenizer and model
-tokenizer = AutoTokenizer.from_pretrained("microsoft/DialoGPT-medium")
-model = AutoModelForCausalLM.from_pretrained("microsoft/DialoGPT-medium")
-# Initialize the TF-IDF vectorizer
-vectorizer = TfidfVectorizer()
-
-@lru_cache(maxsize=1000)  # Cache the most recent 1000 results
-def generate_response(input):
-    # Use the tokenizer to encode the input
-    input_tensor = tokenizer.encode(input, return_tensors='pt')
-    # Use the model to generate a response
-    output = model.generate(input_tensor, max_length=150)
-    # Decode the output to get the response
-    response = tokenizer.decode(output[0], skip_special_tokens=True)
-    return response
-
-def respond_to_user(texts, history, user_data, current_agent):
+def respond_to_user(text, history, user_data):
+    global current_agent
+    # Check if the user provided new information about themselves
+    new_info = detect_new_info(text)
+    if new_info:
+        # Update the user_data dictionary and the user_info.json file
+        user_data.update(new_info)
+        user_info.store_user_info(user_data)
+        return f"I will remember this information for future reference.", history
+    # Check if the user asked to switch agents
+    lower_text = text.lower()
+    new_agent = None
+    for agent, keywords in agent_keywords.items():
+        if any(re.search(fr"\b{keyword}\b", lower_text) for keyword in keywords):  # Use regular expressions for keyword matching
+            new_agent = agent
+            break
+    if new_agent and new_agent != current_agent:
+        current_agent = new_agent
+        history = deque([agents[current_agent].system_message], maxlen=4096)  # Reset the history only when switching to a different agent
+        return f"Switched to {current_agent}.", history
+    # If the user didn't ask to switch agents, check if they asked for their information
     responses = []
-    for text in texts:
-        # Check if the user provided new information about themselves
-        new_info = detect_new_info(text)
-        if new_info:
-            # Update the user_data dictionary and the user_info.json file
-            user_data.update(new_info)
-            user_info.store_user_info(user_data)
-            responses.append(f"I will remember this information for future reference.")
-            continue
-        # Check if the user asked to switch agents
-        lower_text = text.lower()
-        new_agent = None
-        for agent, keywords in agent_keywords.items():
-            if any(re.search(fr"\b{keyword}\b", lower_text) for keyword in keywords):  # Use regular expressions for keyword matching
-                new_agent = agent
-                break
-        if new_agent and new_agent != current_agent:
-            current_agent = new_agent
-            history = deque([], maxlen=4096)  # Reset the history when switching to a different agent
-            responses.append(f"Switched to {current_agent}.")
-            continue
-        # If the user didn't ask to switch agents, check if they asked for their information
-        response = []
-        for key in user_data:
-            if key in lower_text:
-                response.append(f"Your {key} is {user_data[key]}.")
-        if response:
-            responses.append(" ".join(response))
-            continue
-        # If the user didn't ask for their information, proceed with the normal chatbot response
-        final, history = agents[current_agent].chat(text, history, max_tokens=int(os.getenv('MAX_TOKENS', 150)), model=os.getenv('MODEL', "gpt-3.5-turbo"), user_data=user_data)
-        # Generate a response using the cached function
-        try:
-            text_response = generate_response(text)
-            history_response = generate_response(" ".join(history))
-        except Exception as e:
-            print(f"An error occurred while generating a response: {e}")
-            continue
-        # Use the TF-IDF vectorizer to transform the text and history
-        text_vector = vectorizer.transform([text_response])
-        history_vector = vectorizer.transform([history_response])
-        # Calculate the cosine similarity between the text and history vectors
-        similarity = cosine_similarity(text_vector, history_vector)
-        # If the similarity is above a certain threshold, use the history response
-        if similarity > 0.5:
-            final = history_response
-        responses.append(final)
-        # Print the response before adding it to the list
-        print(f"Generated response: {final}")
-        responses.append(final)
-
-    # Print the responses before converting them to strings
-    print(f"Responses before conversion: {responses}")
-
-    # Convert the responses to strings
-    responses = [str(response) for response in responses]
-    return responses, history, user_data
-
-#Initialize the current agent
-current_agent = 'mai_agent'
-
-# Initialize the text-to-speech engine
-speaker = pyttsx3.init()
-voices = speaker.getProperty('voices')
-speaker.setProperty('voice', voices[1].id)  # Select the voice of Sabina
-speaker.setProperty('rate', 150)  # Set the speed of the voice
-
-# Set up logging
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
-def main():
-    # Initialize user_info
-    user_info = UserInfo()
-    # Check if user_info.json exists and load data if it does
-    if os.path.exists('user_info.json'):
-        user_info = UserInfo.load_from_file('user_info.json')
-        user_data = user_info.user_data
-    else:
-        user_info.collect_user_info()
-        user_data = user_info.user_data
-    # Initialize the chat history with the system message
-    history = deque([agents[current_agent].system_message], maxlen=4096)
-    while True:
-        try:
-            # Record audio from the user
-            audio_data = mic.record_audio()
-            # Transcribe the audio data into text
-            text = mic.transcribe_forever(audio_data)
-            # Process the user's input and get a response
-            responses, history, user_data = respond_to_user([text], history, user_data, current_agent)
-            for response in responses:
-                # Speak the response
-                speaker.say(response)
-                speaker.runAndWait()
-                # Log the conversation
-                logger.info(f"Me: {text}")
-                logger.info(f"MAI: {response}")
-        except Exception as e:
-            logger.error(f"An error occurred: {str(e)}")
-        finally:
-            # Optional: Save the conversation history after each interaction
-            with open('history.json', 'w') as f:
-                json.dump(list(history), f, indent=4)  # Use 4 spaces for indentation
-            # Optional: Save the user's information after each interaction
-            user_info.store_user_info(user_data)
+    for key in user_data:
+        if key in lower_text:
+            responses.append(f"Your {key} is {user_data[key]}.")
+    if responses:
+        response_text = " ".join(responses)
+        return response_text, history
+    # If the user didn't ask for their information, proceed with the normal chatbot response
+    final, history = agents[current_agent].chat(text, history, max_tokens=int(os.getenv('MAX_TOKENS', 150)), model=os.getenv('MODEL', "gpt-3.5-turbo"), user_data=user_data)
+    return final, history
 
 if __name__ == "__main__":
-    main()
     # Collect user information at the beginning of the conversation
     user_data = user_info.collect_user_info()
     # Store user information

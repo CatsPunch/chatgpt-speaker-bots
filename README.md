@@ -1,8 +1,6 @@
-# chatgpt-speaker-openai-whisper
+# chatgpt-speaker-bots
 A Voice assistant chatbot made with whisper speech to text and openai to generate responses to user queries. Features include speech recognition, text-to-speech conversion, and a customizable personality
 
-
-[![LinkedIn][linkedin-shield]][linkedin-url]
 
 
 <!-- ABOUT THE PROJECT -->
@@ -47,7 +45,7 @@ torch
 
 You can install these dependencies using pip, the Python package manager. Here are the steps:
    ```sh
-   git clone https://github.com/Gustavoandresai/chatgpt-speaker-openai-whisper.git
+   git clone git@github.com:CatsPunch/chatgpt-speaker-bots.git
    ```
 Run the following command to install dependencies:
 `WHISPER` `OpenAi` `pyttsx3` `SpeechRecognition` `pydub` `torch` `numpy`
@@ -107,14 +105,4 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Gustavo Andres Barreto- - Barretoandres461@gmail.com
 
-Project Link: [https://github.com/Gustavoandresai/chatgpt-speaker-openai-whisper](https://github.com/Gustavoandresai/chatgpt-speaker-openai-whisper)
-
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[license-url]: https://github.com/Gustavoandresai/chatgpt-speaker-openai-whisper/blob/master/LICENSE.txt
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/gustavoandresbarreto
-[product-screenshot]: portfolio-9.jpg
