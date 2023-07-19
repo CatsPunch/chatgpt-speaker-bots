@@ -2,11 +2,3 @@
 __pycache__/
 .env
 /venv/
-/history.json
-/user_info.json
-/user_info.py
-/models/
-main - Spacy.py
-main-original.py 
-main.py
-mic.py

@@ -1,0 +1,146 @@
+{
+    "name": "Rex",
+    "age": "34",
+    "gender": "Male",
+    "location": "LA",
+    "occupation": "Developer",
+    "Travel": [
+        "Japan",
+        "Eastern Europe",
+        "France",
+        "Greece",
+        "Italy",
+        "Europe",
+        "United Kingdom",
+        "Australia and New Zealand",
+        "Bed and breakfasts",
+        "Travel news and general info",
+        "Mexico and Central America",
+        "Honeymoons and getaways"
+    ],
+    "Food and Drink": [
+        "French cuisine",
+        "Cooking",
+        "American cuisine",
+        "Barbecues and grilling",
+        "Desserts and baking",
+        "Foodie news and general info",
+        "Bars and nightlife",
+        "Cocktails and beer",
+        "Liquor and spirits",
+        "Cajun and Creole",
+        "Coffee and tea"
+    ],
+    "Education": [
+        "Language learning",
+        "Education news and general info"
+    ],
+    "Automotive": [
+        "Off-road vehicles",
+        "Hybrid and electric vehicles",
+        "Automotive news and general info",
+        "SUV's"
+    ],
+    "Beauty": [
+        "Make-up and cosmetics",
+        "Perfumes and fragrances",
+        "Tanning and sun care",
+        "Spa and medical spa",
+        "Shaving and grooming"
+    ],
+    "Hobbies and Interests": [
+        "Sci-fi and fantasy",
+        "Celebrity fan and gossip",
+        "Exercise and fitness",
+        "Stamps and coins",
+        "Arts and crafts",
+        "Drawing and sketching"
+    ],
+    "Movies and Television": [
+        "Sci-fi and fantasy",
+        "Business and news",
+        "Action and adventure",
+        "Movie news and general info"
+    ],
+    "Sports": [
+        "Table tennis and ping-pong",
+        "Power and motorcycles",
+        "Surfing and bodyboarding",
+        "Waterskiing and wakeboarding",
+        "Hunting and shooting",
+        "Running and jogging",
+        "Canoeing and kayaking"
+    ],
+    "Books and Literature": [
+        "Biographies and memoirs",
+        "Books news and general info",
+        "Business and finance",
+        "Cookbooks, food, and wine",
+        "Health, mind, and body",
+        "Mystery and crime",
+        "Politics and current events"
+    ],
+    "Business": [
+        "Biotech and biomedical",
+        "Business news and general info",
+        "Investors and patents"
+    ],
+    "Careers": [
+        "Career news and general info"
+    ],
+    "Events": [
+        "Music festivals and concerts"
+    ],
+    "Family and Parenting": [
+        "Babies and toddlers",
+        "Daycare and preschool"
+    ],
+    "Gaming": [
+        "Gaming news and general info"
+    ],
+    "Health": [
+        "Health news and general info"
+    ],
+    "Home and Garden": [
+        "Remodeling and construction",
+        "Entertaining at home"
+    ],
+    "Music and Radio": [
+        "Christian and gospel",
+        "Hip hop and rap",
+        "Music news and general info",
+        "R&B and soul"
+    ],
+    "Personal Finance": [
+        "Credit, debit, and loans"
+    ],
+    "Science": [
+        "Space and astronomy"
+    ],
+    "Style and Fashion": [
+        "Dresses and skirts",
+        "Women's intimates and hosiery",
+        "Women's accessories",
+        "Men's tops",
+        "Woman's tops",
+        "Men's outerwear",
+        "Women's beachwear",
+        "Women's shoes",
+        "Women's outerwear",
+        "Men's beachwear",
+        "Men's accessories",
+        "Men's formal wear",
+        "Women's pants",
+        "Men's bags",
+        "Men's shoes",
+        "Men's jeans",
+        "Women's tops",
+        "Women's bags",
+        "Men's pants",
+        "Women's jeans"
+    ],
+    "Technology and Computing": [
+        "Cameras and camcorders",
+        "Enterprise software"
+    ]
+}
